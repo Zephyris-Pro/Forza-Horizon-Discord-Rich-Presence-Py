@@ -60,7 +60,8 @@ impl CarDatabase {
         
         match client.get(target_url).send().await {
             Ok(response) => {
-                if response.status().is_success() {
+                let status = response.status();
+                if status.is_success() {
                     if let Ok(json_text) = response.text().await {
                         // Validate JSON
                         if serde_json::from_str::<HashMap<String, String>>(&json_text).is_ok() {
@@ -71,10 +72,14 @@ impl CarDatabase {
                                     return Ok("Database successfully updated!".to_string());
                                 }
                             }
+                        } else {
+                            return Err("Invalid database format".into());
                         }
                     }
+                } else if status.as_u16() == 404 {
+                    return Err("Update source not found (Check URL)".into());
                 }
-                Ok("Database is already up to date.".to_string())
+                Err(format!("Server returned error: {}", status))
             },
             Err(e) => {
                 Err(format!("Network error: {}", e))
