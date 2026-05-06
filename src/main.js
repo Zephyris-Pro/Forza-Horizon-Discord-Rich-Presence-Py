@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const uwpError = document.getElementById("uwp-error");
 
   const updateDbBtn = document.getElementById("update-db-btn");
-  const dbSuccess = document.getElementById("db-success");
+  const uwpHint = document.getElementById("uwp-hint");
 
   const statusIndicator = document.getElementById("status-indicator");
   const statusText = document.getElementById("status-text");
@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (isFixedBackend || isFixedLocal) {
         fixUwpBtn.classList.add("hidden");
+        if (uwpHint) uwpHint.classList.add("hidden");
         uwpSuccess.classList.remove("hidden");
         uwpSuccess.textContent = "Network already fixed";
         uwpError.classList.add("hidden");
@@ -45,6 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
       await invoke("fix_uwp_isolation");
       fixUwpBtn.textContent = "Fixed!";
       fixUwpBtn.classList.add("hidden");
+      if (uwpHint) uwpHint.classList.add("hidden");
       uwpSuccess.classList.remove("hidden");
       uwpSuccess.textContent = "Network fixed";
       localStorage.setItem("uwp_fixed", "true");

@@ -38,8 +38,11 @@
 
         <!-- Bottom: Actions Row -->
         <div class="actions-row">
-          <section class="card action-card">
+          <section class="card action-card" style="position: relative;">
             <button id="fix-uwp-btn" class="primary-btn">Fix Network</button>
+            <p id="uwp-hint"
+              style="color: var(--success-color); font-size: 0.75rem; font-weight: 500; position: absolute; bottom: 4px; left: 0; width: 100%; text-align: center; pointer-events: none;">
+              Only needed once</p>
             <p class="success-msg hidden" id="uwp-success">Network fixed</p>
           </section>
 
