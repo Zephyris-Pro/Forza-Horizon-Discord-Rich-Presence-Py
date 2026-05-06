@@ -15,8 +15,28 @@ document.addEventListener("DOMContentLoaded", () => {
   const statusDetail = document.getElementById("status-detail");
 
   // Fix UWP Isolation Button
+  // Check if already fixed
+  async function checkUwpStatus() {
+    try {
+      const isFixedBackend = await invoke("check_uwp_status");
+      const isFixedLocal = localStorage.getItem("uwp_fixed") === "true";
+      
+      if (isFixedBackend || isFixedLocal) {
+        fixUwpBtn.classList.add("hidden");
+        uwpSuccess.classList.remove("hidden");
+        uwpSuccess.textContent = "Network already fixed";
+        uwpError.classList.add("hidden");
+      }
+    } catch (e) {
+      console.error("Failed to check UWP status", e);
+    }
+  }
+
+  checkUwpStatus();
+
   fixUwpBtn.addEventListener("click", async () => {
     fixUwpBtn.disabled = true;
+    fixUwpBtn.textContent = "Fixing...";
     uwpSuccess.classList.add("hidden");
     uwpError.classList.add("hidden");
 
@@ -24,6 +44,9 @@ document.addEventListener("DOMContentLoaded", () => {
       // Call Rust backend command
       await invoke("fix_uwp_isolation");
       uwpSuccess.classList.remove("hidden");
+      uwpSuccess.textContent = "Fixed successfully!";
+      fixUwpBtn.classList.add("hidden");
+      localStorage.setItem("uwp_fixed", "true");
     } catch (error) {
       console.error(error);
       uwpError.textContent = `Error: ${error}`;

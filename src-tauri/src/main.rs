@@ -8,6 +8,7 @@ mod telemetry;
 
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use std::os::windows::process::CommandExt;
 use sysinfo::System;
 use tauri::{AppHandle, Manager, Emitter};
 use tauri::tray::{TrayIconBuilder, MouseButton, MouseButtonState, TrayIconEvent};
@@ -49,6 +50,30 @@ async fn fix_uwp_isolation(state: tauri::State<'_, AppState>) -> Result<String, 
 #[tauri::command]
 async fn check_db_updates(app: tauri::AppHandle) -> Result<String, String> {
     CarDatabase::check_for_updates(app).await
+}
+
+#[tauri::command]
+async fn check_uwp_status(state: tauri::State<'_, AppState>) -> Result<bool, String> {
+    let package_name = state.game_module.uwp_package_name().to_lowercase();
+    if package_name.is_empty() {
+        return Ok(true); // No UWP fix needed for this game
+    }
+
+    let output = std::process::Command::new("CheckNetIsolation")
+        .arg("LoopbackExempt")
+        .arg("-s")
+        .creation_flags(0x08000000) // CREATE_NO_WINDOW
+        .output()
+        .map_err(|e: std::io::Error| e.to_string())?;
+
+    let output_str = String::from_utf8_lossy(&output.stdout).to_lowercase();
+    
+    // If the package name is explicitly found in the output, it's exempt
+    if output_str.contains(&package_name) {
+        return Ok(true);
+    }
+    
+    Ok(false)
 }
 
 #[tauri::command]
@@ -190,6 +215,7 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             fix_uwp_isolation,
+            check_uwp_status,
             check_db_updates,
             ui_ready
         ])
