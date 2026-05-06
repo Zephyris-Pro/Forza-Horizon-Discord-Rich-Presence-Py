@@ -186,7 +186,7 @@ fn main() {
             let app_handle_clone = app_handle.clone();
             
             tauri::async_runtime::spawn(async move {
-                let mut sys = System::new_all();
+                let mut sys = System::new();
                 let server = Arc::new(TelemetryServer::new());
                 
                 let (tx, mut rx) = broadcast::channel(16);
@@ -194,7 +194,7 @@ fn main() {
                 let mut active_discord: Option<Arc<DiscordService>> = None;
 
                 loop {
-                    sys.refresh_processes();
+                    sys.refresh_processes_specifics(sysinfo::ProcessRefreshKind::new());
                     
                     let mut active_module: Option<Arc<dyn GameModule>> = None;
                     for module in &modules {
