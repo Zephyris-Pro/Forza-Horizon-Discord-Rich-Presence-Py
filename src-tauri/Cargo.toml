@@ -27,4 +27,5 @@ sysinfo = "0.30"
 tokio = { version = "1.36", features = ["full"] }
 discord-rich-presence = "0.2"
 reqwest = { version = "0.12", features = ["json"] }
+socket2 = "0.5"
 
