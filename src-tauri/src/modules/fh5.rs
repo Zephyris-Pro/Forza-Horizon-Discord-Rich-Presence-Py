@@ -18,17 +18,20 @@ impl GameModule for FH5Module {
     fn game_name(&self) -> &'static str {
         "Forza Horizon 5"
     }
+    
+    fn logo_asset_key(&self) -> &'static str {
+        "logo"
+    }
 
     fn format_class(&self, class_id: i32) -> String {
         match class_id {
-            0 => "E".into(),
-            1 => "D".into(),
-            2 => "C".into(),
-            3 => "B".into(),
-            4 => "A".into(),
-            5 => "S1".into(),
-            6 => "S2".into(),
-            7 => "X".into(),
+            0 => "D".into(),
+            1 => "C".into(),
+            2 => "B".into(),
+            3 => "A".into(),
+            4 => "S1".into(),
+            5 => "S2".into(),
+            6 => "X".into(),
             _ => "Unknown".into(),
         }
     }
