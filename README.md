@@ -15,7 +15,7 @@
 3. Scroll to the bottom and configure the **Data Out** settings:
    - **Data Out:** `ON`
    - **Data Out IP Address:** `127.0.0.1`
-   - **Data Out IP Port:** `9909`
+   - **Data Out IP Port:** `8001`
 4. Create api key at [xbl.io](https://xbl.io/)
 5. Paste api key into OpenXBL Input field
 
