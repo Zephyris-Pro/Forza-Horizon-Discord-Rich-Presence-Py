@@ -176,7 +176,8 @@ document.addEventListener("DOMContentLoaded", () => {
       statusDetail.textContent = details || "Launch game to broadcast";
       
       const xblText = document.getElementById("xbl-status-text");
-      xblText.textContent = xbl_status || "Connecting...";
+      const hasXblKey = !!localStorage.getItem("xbl_api_key");
+      xblText.textContent = xbl_status || (hasXblKey ? "Waiting for game..." : "Disconnected");
       
       if (xbl_status && (xbl_status.includes("Error:") || xbl_status.includes("error:"))) {
         xblText.style.color = "var(--error-color)";
@@ -190,6 +191,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const xblSavedIndicator = document.getElementById("xbl-saved-indicator");
     let savedXblKey = localStorage.getItem("xbl_api_key") || "";
     xblKeyInput.value = savedXblKey;
+
+    if (savedXblKey) {
+      document.getElementById("xbl-status-text").textContent = "Waiting for game...";
+    }
 
     xblKeyInput.addEventListener("blur", async () => {
       const key = xblKeyInput.value.trim();

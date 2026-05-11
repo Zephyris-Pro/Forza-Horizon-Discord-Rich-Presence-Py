@@ -26,6 +26,8 @@ struct AppState {
     active_game: Arc<Mutex<Option<String>>>,
     xbl_api_key: Arc<Mutex<String>>,
     telemetry_port: Arc<Mutex<u16>>,
+    telemetry_server: Arc<TelemetryServer>,
+    telemetry_tx: Arc<Mutex<Option<broadcast::Sender<TelemetryData>>>>,
 }
 
 #[tauri::command]
@@ -146,7 +148,18 @@ fn update_xbl_settings(api_key: String, state: tauri::State<'_, AppState>) {
 
 #[tauri::command]
 fn update_telemetry_port(port: u16, state: tauri::State<'_, AppState>) {
-    *state.telemetry_port.lock().unwrap() = port;
+    let mut current_port = state.telemetry_port.lock().unwrap();
+    if *current_port == port {
+        return;
+    }
+    *current_port = port;
+    
+    let tx_guard = state.telemetry_tx.lock().unwrap();
+    if let Some(tx) = tx_guard.as_ref() {
+        state.telemetry_server.stop();
+        std::thread::sleep(std::time::Duration::from_millis(1500)); // wait for socket to unbind (recv timeout is 1s)
+        state.telemetry_server.start(port, tx.clone());
+    }
 }
 
 #[tauri::command]
@@ -261,24 +274,28 @@ fn main() {
             let active_game = Arc::new(Mutex::new(None));
             let xbl_api_key = Arc::new(Mutex::new(String::new()));
             let telemetry_port = Arc::new(Mutex::new(9909));
+            let telemetry_server = Arc::new(TelemetryServer::new());
+            let telemetry_tx: Arc<Mutex<Option<broadcast::Sender<TelemetryData>>>> = Arc::new(Mutex::new(None));
             
             app.manage(AppState {
                 modules: modules.clone(),
                 active_game: active_game.clone(),
                 xbl_api_key: xbl_api_key.clone(),
                 telemetry_port: telemetry_port.clone(),
+                telemetry_server: telemetry_server.clone(),
+                telemetry_tx: telemetry_tx.clone(),
             });
 
             // Start background monitor task
             let app_handle_clone = app_handle.clone();
             let xbl_api_key_clone = xbl_api_key.clone();
             let telemetry_port_clone = telemetry_port.clone();
+            let telemetry_server_clone = telemetry_server.clone();
+            let telemetry_tx_clone = telemetry_tx.clone();
             
             tauri::async_runtime::spawn(async move {
                 let mut sys = System::new();
-                let server = Arc::new(TelemetryServer::new());
                 
-                let mut _telemetry_tx: Option<broadcast::Sender<TelemetryData>> = None;
                 let mut is_game_running = false;
                 let mut active_discord: Option<Arc<DiscordService>> = None;
 
@@ -310,8 +327,8 @@ fn main() {
                             active_discord = Some(discord_service.clone());
                             
                             let port = *telemetry_port_clone.lock().unwrap();
-                            server.start(port, tx.clone());
-                            _telemetry_tx = Some(tx.clone());
+                            telemetry_server_clone.start(port, tx.clone());
+                            *telemetry_tx_clone.lock().unwrap() = Some(tx.clone());
 
                             let _ = app_handle_clone.emit("status_update", serde_json::json!({
                                 "status": "connected",
@@ -384,18 +401,30 @@ fn main() {
                                 let mut last_update = tokio::time::Instant::now();
                                 // Bind the xbl_stop_tx to this loop's lifetime so it drops when this breaks
                                 let _stop_tx = xbl_stop_tx; 
+                                let mut last_telemetry: Option<TelemetryData> = None;
                                 loop {
-                                    match rx_clone.recv().await {
-                                        Ok(data) => {
-                                            if last_update.elapsed() >= Duration::from_millis(1500) {
-                                                let db_lock = db_clone.lock().unwrap();
-                                                let xbl_lock = xbl_status.lock().unwrap();
-                                                discord_service.update_presence(&data, &db_lock, module_clone.as_ref(), xbl_lock.as_deref());
-                                                last_update = tokio::time::Instant::now();
+                                    tokio::select! {
+                                        recv_result = rx_clone.recv() => {
+                                            match recv_result {
+                                                Ok(data) => {
+                                                    last_telemetry = Some(data);
+                                                    if last_update.elapsed() >= Duration::from_millis(1500) {
+                                                        let db_lock = db_clone.lock().unwrap();
+                                                        let xbl_lock = xbl_status.lock().unwrap();
+                                                        discord_service.update_presence(last_telemetry.as_ref(), &db_lock, module_clone.as_ref(), xbl_lock.as_deref());
+                                                        last_update = tokio::time::Instant::now();
+                                                    }
+                                                }
+                                                Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => continue,
+                                                Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
                                             }
                                         }
-                                        Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => continue,
-                                        Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
+                                        _ = tokio::time::sleep(Duration::from_millis(1500)) => {
+                                            let db_lock = db_clone.lock().unwrap();
+                                            let xbl_lock = xbl_status.lock().unwrap();
+                                            discord_service.update_presence(last_telemetry.as_ref(), &db_lock, module_clone.as_ref(), xbl_lock.as_deref());
+                                            last_update = tokio::time::Instant::now();
+                                        }
                                     }
                                 }
                             });
@@ -406,8 +435,8 @@ fn main() {
                         *active_game.lock().unwrap() = None;
                         println!("Game stopped.");
                         
-                        server.stop();
-                        _telemetry_tx = None; // Drops the sender, terminating the updater loop
+                        telemetry_server_clone.stop();
+                        *telemetry_tx_clone.lock().unwrap() = None; // Drops the sender, terminating the updater loop
                         if let Some(discord) = active_discord.take() {
                             discord.disconnect();
                         }
