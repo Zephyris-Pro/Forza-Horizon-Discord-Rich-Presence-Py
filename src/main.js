@@ -250,6 +250,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // UDP Forwarding Panel
     const udpForwardBtn = document.getElementById("udp-forward-btn");
     const udpForwardPanel = document.getElementById("udp-forward-panel");
+    const relayActiveToggle = document.getElementById("relay-active");
     const relayIpInput = document.getElementById("relay-ip");
     const relayPortInput = document.getElementById("relay-port");
     const relaySavedIndicator = document.getElementById("relay-saved-indicator");
@@ -258,9 +259,25 @@ document.addEventListener("DOMContentLoaded", () => {
     const savedRelayIp = localStorage.getItem("relay_ip") || "127.0.0.1";
     const savedRelayPort = localStorage.getItem("relay_port") || "8000";
     const relayEnabled = localStorage.getItem("relay_enabled") === "true";
+    // Toggle is stored separately; default OFF
+    const relayActive = localStorage.getItem("relay_active") === "true";
 
     relayIpInput.value = savedRelayIp;
     relayPortInput.value = savedRelayPort;
+    relayActiveToggle.checked = relayActive;
+
+    // Helper: dim/enable the IP+port fields based on toggle state
+    function updateFieldsState(active) {
+      const rows = udpForwardPanel.querySelectorAll(".udp-forward-row");
+      rows.forEach(row => {
+        if (active) {
+          row.classList.remove("udp-fields-disabled");
+        } else {
+          row.classList.add("udp-fields-disabled");
+        }
+      });
+    }
+    updateFieldsState(relayActive);
 
     const BASE_HEIGHT = 365; // must match tauri.conf.json "height"
     const tauriWindow = window.__TAURI__.window;
@@ -309,8 +326,20 @@ document.addEventListener("DOMContentLoaded", () => {
           const panelH = udpForwardPanel.offsetHeight;
           setWindowHeight(BASE_HEIGHT + panelH + 25);
         });
-        // Apply current values immediately
+        // Apply current values only if toggle is on
+        if (relayActiveToggle.checked) applyRelaySettings();
+      }
+    });
+
+    // Toggle on/off switch
+    relayActiveToggle.addEventListener("change", () => {
+      const active = relayActiveToggle.checked;
+      localStorage.setItem("relay_active", active.toString());
+      updateFieldsState(active);
+      if (active) {
         applyRelaySettings();
+      } else {
+        invoke("update_relay_ports", { targets: [] }).catch(console.error);
       }
     });
 
@@ -329,14 +358,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     relayIpInput.addEventListener("blur", async () => {
-      if (!udpForwardPanel.classList.contains("hidden")) {
+      if (!udpForwardPanel.classList.contains("hidden") && relayActiveToggle.checked) {
         localStorage.setItem("relay_ip", relayIpInput.value.trim() || "127.0.0.1");
         await applyRelaySettings();
       }
     });
 
     relayPortInput.addEventListener("blur", async () => {
-      if (!udpForwardPanel.classList.contains("hidden")) {
+      if (!udpForwardPanel.classList.contains("hidden") && relayActiveToggle.checked) {
         localStorage.setItem("relay_port", relayPortInput.value.trim() || "8000");
         await applyRelaySettings();
       }
@@ -346,8 +375,8 @@ document.addEventListener("DOMContentLoaded", () => {
     invoke("ui_ready").catch(console.error);
     invoke("update_xbl_settings", { apiKey: savedXblKey }).catch(console.error);
     invoke("update_telemetry_port", { port: parseInt(savedPort) || 8001 }).catch(console.error);
-    // Apply saved relay settings on startup if enabled
-    if (relayEnabled) {
+    // Apply saved relay settings on startup if panel is open AND toggle is on
+    if (relayEnabled && relayActive) {
       applyRelaySettings().catch(console.error);
     }
   });
