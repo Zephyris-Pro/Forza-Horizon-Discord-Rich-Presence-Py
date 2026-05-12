@@ -32,6 +32,6 @@ Windows blocks UWP apps from sending data to local programs. If you play the Mic
 
 - **Car Database Updates:** Click "Update Cars" to automatically fetch the latest car list from this repository.
 - **Set & Forget:** Enable "Run on Startup" and "Launch Minimized" to let the app run silently in your system tray.
-- **SimHub:** Fully compatible with SimHub and other software that uses your forza telemetry. Just use same port which uses SimHub.
+- **SimHub:** Fully compatible with SimHub and other software that uses your forza telemetry.
 - **OpenXBL:** Update frequency is optimized to preserve your free API limits.
 - **100% Safe:** No game file modifications or memory hooking/reading involved.
