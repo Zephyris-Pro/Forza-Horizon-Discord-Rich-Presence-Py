@@ -83,9 +83,8 @@ impl DiscordService {
             let mut payload = activity::Activity::new()
                 .timestamps(activity::Timestamps::new().start(self.start_time));
             let mut assets = activity::Assets::new();
-
-            let mut class_key = String::new();
-            let mut hover_text = String::new();
+            let mut class_key = None;
+            let mut hover_text = None;
 
             if let Some(data) = effective_data {
                 let car_name_opt = db.get_car_name_opt(data.car_ordinal);
@@ -116,14 +115,15 @@ impl DiscordService {
                     }
                 }
 
-                class_key = format!("class_{}", class_str.to_lowercase());
-                hover_text = format!("{} | {} ({})", car_name, class_str, data.car_pi);
+                class_key = Some(format!("class_{}", class_str.to_lowercase()));
+                hover_text = Some(format!("{} | {} ({})", car_name, class_str, data.car_pi));
 
                 assets = assets.large_image(module.logo_asset_key());
                 
                 if !is_unknown {
-                    assets = assets.small_image(&class_key)
-                        .small_text(&hover_text);
+                    if let (Some(ref key), Some(ref text)) = (&class_key, &hover_text) {
+                        assets = assets.small_image(key).small_text(text);
+                    }
                 }
                 
                 if let Some(xbl) = valid_xbl_state {

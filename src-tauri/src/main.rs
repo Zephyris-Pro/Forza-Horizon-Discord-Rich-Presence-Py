@@ -105,8 +105,14 @@ fn fix_uwp_isolation(state: tauri::State<'_, AppState>) -> Result<String, String
 }
 
 #[tauri::command]
-async fn check_db_updates(app: tauri::AppHandle) -> Result<String, String> {
-    CarDatabase::check_for_updates(app).await
+async fn check_db_updates(app: tauri::AppHandle, state: tauri::State<'_, AppState>) -> Result<String, String> {
+    let msg = CarDatabase::check_for_updates(app.clone()).await?;
+    
+    // Reload database in memory after successful update
+    let mut db = state.db.lock().unwrap();
+    db.load(&app);
+    
+    Ok(msg)
 }
 
 #[tauri::command]

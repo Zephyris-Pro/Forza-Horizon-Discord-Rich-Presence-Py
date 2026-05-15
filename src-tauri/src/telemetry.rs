@@ -9,8 +9,8 @@ pub struct TelemetryData {
     pub car_ordinal: i32,
     pub car_class: i32,
     pub car_pi: i32,
-    pub speed_kmh: f32,
-    pub is_race_on: i32,
+    pub _speed_kmh: f32,
+    pub _is_race_on: i32,
 }
 
 pub struct TelemetryServer {
@@ -22,10 +22,6 @@ impl TelemetryServer {
         Self {
             is_running: Arc::new(AtomicBool::new(false)),
         }
-    }
-
-    pub fn start(&self, port: u16, tx: broadcast::Sender<TelemetryData>) {
-        self.start_with_relay(port, tx, vec![]);
     }
 
     /// Start the telemetry server with optional relay forwarding.
@@ -150,8 +146,8 @@ impl TelemetryServer {
             car_ordinal,
             car_class,
             car_pi,
-            speed_kmh,
-            is_race_on,
+            _speed_kmh: speed_kmh,
+            _is_race_on: is_race_on,
         }
     }
 }
