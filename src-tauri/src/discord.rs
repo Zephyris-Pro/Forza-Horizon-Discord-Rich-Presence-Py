@@ -8,6 +8,7 @@ pub struct DiscordService {
     client: Mutex<Option<DiscordIpcClient>>,
     client_id: String,
     start_time: i64,
+    last_car_data: Mutex<Option<TelemetryData>>,
 }
 
 impl DiscordService {
@@ -21,6 +22,7 @@ impl DiscordService {
             client: Mutex::new(None),
             client_id: client_id.to_string(),
             start_time,
+            last_car_data: Mutex::new(None),
         }
     }
 
@@ -61,6 +63,21 @@ impl DiscordService {
                 }
             });
 
+            // Handle car data caching
+            let effective_data = {
+                let mut last_lock = self.last_car_data.lock().unwrap();
+                if let Some(data) = data_opt {
+                    if data.car_ordinal != 0 {
+                        *last_lock = Some(data.clone());
+                        Some(data.clone())
+                    } else {
+                        last_lock.clone()
+                    }
+                } else {
+                    last_lock.clone()
+                }
+            };
+
             let mut details_str = String::new(); // Top line
             let mut state_str = String::new();   // Bottom line
             let mut payload = activity::Activity::new()
@@ -70,7 +87,7 @@ impl DiscordService {
             let mut class_key = String::new();
             let mut hover_text = String::new();
 
-            if let Some(data) = data_opt {
+            if let Some(data) = effective_data {
                 let car_name = db.get_car_name(data.car_ordinal);
                 let display_name = if car_name.chars().count() > 25 {
                     let truncated: String = car_name.chars().take(22).collect();
@@ -82,37 +99,28 @@ impl DiscordService {
                 let class_str = module.format_class(data.car_class);
                 let telemetry_str = format!("{} | {} ({})", display_name, class_str, data.car_pi);
 
+                // Car display info is now always shown if effective_data exists
+
                 if let Some(xbl) = valid_xbl_state {
                     details_str = xbl.to_string();
-                    if data.is_race_on != 0 {
-                        state_str = telemetry_str;
-                    }
+                    state_str = telemetry_str;
                 } else {
-                    if data.is_race_on != 0 {
-                        details_str = car_name.clone();
-                        state_str = format!("{} ({})", class_str, data.car_pi);
-                    }
+                    details_str = car_name.clone();
+                    state_str = format!("{} ({})", class_str, data.car_pi);
                 }
 
                 class_key = format!("class_{}", class_str.to_lowercase());
                 hover_text = format!("{} | {} ({})", car_name, class_str, data.car_pi);
 
-                if data.is_race_on == 0 {
-                    assets = assets.large_image(module.logo_asset_key());
-                    if let Some(xbl) = valid_xbl_state {
-                        details_str = xbl.to_string();
-                        assets = assets.large_text(xbl);
-                    }
-                } else {
-                    assets = assets.large_image(module.logo_asset_key())
-                        .small_image(&class_key)
-                        .small_text(&hover_text);
-                    if let Some(xbl) = valid_xbl_state {
-                        assets = assets.large_text(xbl);
-                    }
+                assets = assets.large_image(module.logo_asset_key())
+                    .small_image(&class_key)
+                    .small_text(&hover_text);
+                
+                if let Some(xbl) = valid_xbl_state {
+                    assets = assets.large_text(xbl);
                 }
             } else {
-                // No telemetry data
+                // No telemetry data EVER seen yet
                 if let Some(xbl) = valid_xbl_state {
                     details_str = xbl.to_string();
                     assets = assets.large_image(module.logo_asset_key()).large_text(xbl);
