@@ -37,6 +37,7 @@ struct AppState {
     /// Targets to relay raw Forza UDP packets to (ip + port).
     /// Allows coexistence with SimHub without a port conflict.
     relay_targets: Arc<Mutex<Vec<RelayTarget>>>,
+    db: Arc<Mutex<CarDatabase>>,
 }
 
 #[tauri::command]
@@ -253,7 +254,20 @@ fn show_window(window: tauri::Window) {
 }
 
 #[tauri::command]
-async fn report_car_name(car_id: i32, car_name: String, game: String) -> Result<String, String> {
+async fn report_car_name(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
+    car_id: i32,
+    car_name: String,
+    game: String
+) -> Result<String, String> {
+    // 1. Save locally first so the user sees the change immediately
+    {
+        let mut db = state.db.lock().unwrap();
+        let _ = db.add_car_locally(&app, car_id, car_name.clone());
+    }
+
+    // 2. Send report to Vercel
     let client = reqwest::Client::new();
     let url = "https://forza-rpc-backend.vercel.app/api/report";
     
@@ -268,7 +282,7 @@ async fn report_car_name(car_id: i32, car_name: String, game: String) -> Result<
         .map_err(|e| e.to_string())?;
 
     if res.status().is_success() {
-        Ok("Report sent! Thanks.".into())
+        Ok("Report sent! Name saved locally.".into())
     } else {
         Err(format!("Server returned: {}", res.status()))
     }
@@ -339,6 +353,7 @@ fn main() {
                 telemetry_server: telemetry_server.clone(),
                 telemetry_tx: telemetry_tx.clone(),
                 relay_targets: relay_targets.clone(),
+                db: db.clone(),
             });
 
             // Start background monitor task

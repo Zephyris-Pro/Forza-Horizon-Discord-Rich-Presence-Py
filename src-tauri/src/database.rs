@@ -53,6 +53,30 @@ impl CarDatabase {
         self.cars.get(&id).cloned()
     }
 
+    pub fn add_car_locally(&mut self, app_handle: &AppHandle, id: i32, name: String) -> Result<(), String> {
+        self.cars.insert(id, name.clone());
+        
+        if let Some(app_dir) = app_handle.path().app_data_dir().ok() {
+            let _ = fs::create_dir_all(&app_dir);
+            let update_file = app_dir.join("cars_update.json");
+            
+            // Read existing update or start new
+            let mut custom_map = if update_file.exists() {
+                let data = fs::read_to_string(&update_file).unwrap_or_default();
+                serde_json::from_str::<HashMap<String, String>>(&data).unwrap_or_default()
+            } else {
+                HashMap::new()
+            };
+            
+            custom_map.insert(id.to_string(), name);
+            
+            if let Ok(json) = serde_json::to_string_pretty(&custom_map) {
+                fs::write(update_file, json).map_err(|e| e.to_string())?;
+            }
+        }
+        Ok(())
+    }
+
     pub async fn check_for_updates(app_handle: AppHandle) -> Result<String, String> {
         // In a real scenario, this would fetch from a GitHub releases page or ForzaDB API.
         // For demonstration, we simulate an API call.

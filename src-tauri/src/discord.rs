@@ -119,9 +119,12 @@ impl DiscordService {
                 class_key = format!("class_{}", class_str.to_lowercase());
                 hover_text = format!("{} | {} ({})", car_name, class_str, data.car_pi);
 
-                assets = assets.large_image(module.logo_asset_key())
-                    .small_image(&class_key)
-                    .small_text(&hover_text);
+                assets = assets.large_image(module.logo_asset_key());
+                
+                if !is_unknown {
+                    assets = assets.small_image(&class_key)
+                        .small_text(&hover_text);
+                }
                 
                 if let Some(xbl) = valid_xbl_state {
                     assets = assets.large_text(xbl);
