@@ -32,6 +32,7 @@ impl GameModule for FH6Module {
             4 => "S1".into(),
             5 => "S2".into(),
             6 => "R".into(),
+            7 => "X".into(),
             _ => "Unknown".into(),
         }
     }
