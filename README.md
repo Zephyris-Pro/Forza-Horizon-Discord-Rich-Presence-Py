@@ -44,7 +44,7 @@ Windows blocks UWP apps from sending data to local programs. If you play the Mic
 
 ## Reporting Unknown Cars
  ⚠️ In Forza Horizon 6 some cars are not recognized because I don't have the database for them yet.
- Please consider reporting missing cars <u>directly in the app</u> or by submitting a [PR](https://github.com/1Stalk/Forza-Horizon-Discord-Rich-Presence/pulls) to help speed up the process.
+ Please consider reporting missing cars **<ins>directly in the app</ins>** or by submitting a [PR](https://github.com/1Stalk/Forza-Horizon-Discord-Rich-Presence/pulls) (add cars in **src-tauri/cars.json**) to help speed up the process.
 ## Acknowledgements
 
 - **CringeGaming** — for testing assistance during development
