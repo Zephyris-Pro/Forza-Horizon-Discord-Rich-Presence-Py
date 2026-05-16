@@ -1,16 +1,20 @@
-# Forza Horizon Discord Rich Presence
+<div align="center">
+  <h1>Forza Horizon Discord Rich Presence</h1>
+  <p>A simple app that shows what you are doing in Forza Horizon in your Discord status.</p>
+  <img src="assets/settings3.png" width="380" alt="Application Screenshot" />
+</div>
 
 **Forza Horizon 6** ✅ Supported
 
-<img src="assets/fh6status.png" width="50%" alt="Discord Status Example" />
+<img src="assets/fh6status.png" width="240" alt="Discord Status Example" />
 
 **Forza Horizon 5** ✅ Supported
 
-<img src="assets/fh5status.png" width="50%" alt="Discord Status Example" />
+<img src="assets/fh5status.png" width="240" alt="Discord Status Example" />
 
 **Forza Horizon 4** ✅ Supported
 
-<img src="assets/fh4status.png" width="50%" alt="Discord Status Example" />
+<img src="assets/fh4status.png" width="240" alt="Discord Status Example" />
 
 ## Setup Guide
 
@@ -40,7 +44,7 @@ Windows blocks UWP apps from sending data to local programs. If you play the Mic
 
 ## Reporting Unknown Cars
  ⚠️ In Forza Horizon 6 some cars are not recognized because I don't have the database for them yet.
- Please consider report missing cars directly in app to help speed up the process.
+ Please consider reporting missing cars <u>directly in the app</u> or by submitting a [PR](https://github.com/1Stalk/Forza-Horizon-Discord-Rich-Presence/pulls) to help speed up the process.
 ## Acknowledgements
 
 - **CringeGaming** — for testing assistance during development
