@@ -1,20 +1,20 @@
 <div align="center">
   <h1>Forza Horizon Discord Rich Presence</h1>
   <p>A simple app that shows what you are doing in Forza Horizon in your Discord status.</p>
-  <img src="assets/settings3.png" width="50%" alt="Application Screenshot" />
+  <img src="assets/settings3.png" width="65%" alt="Application Screenshot" />
 </div>
 
 **Forza Horizon 6** ✅ Supported
 
-<img src="assets/fh6status.png" width="35%" alt="Discord Status Example" />
+<img src="assets/fh6status.png" width="48%" alt="Discord Status Example" />
 
 **Forza Horizon 5** ✅ Supported
 
-<img src="assets/fh5status.png" width="35%" alt="Discord Status Example" />
+<img src="assets/fh5status.png" width="48%" alt="Discord Status Example" />
 
 **Forza Horizon 4** ✅ Supported
 
-<img src="assets/fh4status.png" width="35%" alt="Discord Status Example" />
+<img src="assets/fh4status.png" width="48%" alt="Discord Status Example" />
 
 ## Setup Guide
 
