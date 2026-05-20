@@ -9,6 +9,7 @@ pub struct DiscordService {
     client_id: String,
     start_time: i64,
     last_car_data: Mutex<Option<TelemetryData>>,
+    last_xbl_state: Mutex<Option<String>>,
 }
 
 impl DiscordService {
@@ -23,6 +24,7 @@ impl DiscordService {
             client_id: client_id.to_string(),
             start_time,
             last_car_data: Mutex::new(None),
+            last_xbl_state: Mutex::new(None),
         }
     }
 
@@ -63,6 +65,18 @@ impl DiscordService {
                 }
             });
 
+            // Handle XBL state caching
+            let effective_xbl_state = {
+                let mut last_xbl_lock = self.last_xbl_state.lock().unwrap();
+                if let Some(xbl) = valid_xbl_state {
+                    *last_xbl_lock = Some(xbl.to_string());
+                    Some(xbl.to_string())
+                } else {
+                    last_xbl_lock.clone()
+                }
+            };
+            let effective_xbl_ref = effective_xbl_state.as_deref();
+
             // Handle car data caching
             let effective_data = {
                 let mut last_lock = self.last_car_data.lock().unwrap();
@@ -77,6 +91,20 @@ impl DiscordService {
                     last_lock.clone()
                 }
             };
+
+            // Use "Exploring [Country]" fallback if OpenXBL is not connected but we have telemetry
+            let effective_xbl_or_fallback = effective_xbl_ref.or_else(|| {
+                if effective_data.is_some() {
+                    let fallback = match module.game_name() {
+                        "Forza Horizon 4" => "Exploring Great Britain",
+                        "Forza Horizon 5" => "Exploring Mexico",
+                        _ => "Exploring Japan",
+                    };
+                    Some(fallback)
+                } else {
+                    None
+                }
+            });
 
             let mut details_str = String::new(); // Top line
             let mut state_str = String::new();   // Bottom line
@@ -103,7 +131,7 @@ impl DiscordService {
 
                 // Car display info is now always shown if effective_data exists
                 // BUT skip if the car is unknown (user request)
-                if let Some(xbl) = valid_xbl_state {
+                if let Some(xbl) = effective_xbl_or_fallback {
                     details_str = xbl.to_string();
                     if !is_unknown {
                         state_str = telemetry_str;
@@ -126,12 +154,12 @@ impl DiscordService {
                     }
                 }
                 
-                if let Some(xbl) = valid_xbl_state {
+                if let Some(xbl) = effective_xbl_or_fallback {
                     assets = assets.large_text(xbl);
                 }
             } else {
                 // No telemetry data EVER seen yet
-                if let Some(xbl) = valid_xbl_state {
+                if let Some(xbl) = effective_xbl_or_fallback {
                     details_str = xbl.to_string();
                     assets = assets.large_image(module.logo_asset_key()).large_text(xbl);
                 } else {
