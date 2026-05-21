@@ -268,7 +268,9 @@ fn toggle_autostart(enable: bool) -> Result<String, String> {
         let desktop_file = autostart_dir.join("forzarichpresence.desktop");
 
         if enable {
-            let exe_path = std::env::current_exe().map_err(|e| e.to_string())?;
+            let exe_path = std::env::var("APPIMAGE")
+            .map(std::path::PathBuf::from)
+            .or_else(|_| std::env::current_exe().map_err(|e| e.to_string()))?;
             std::fs::create_dir_all(&autostart_dir).map_err(|e| e.to_string())?;
             let contents = format!(
                 "[Desktop Entry]\nType=Application\nName=Forza Rich Presence\nExec={}\nHidden=false\nNoDisplay=false\nX-GNOME-Autostart-enabled=true\n",
@@ -462,8 +464,9 @@ fn main() {
 
                             let cmd_match = process.cmd().iter().any(|arg| {
                                 arg.to_string().to_lowercase().ends_with(&process_name)
-                            });
-
+                            }) && !process.name().to_string().to_lowercase().contains("reaper")
+                              && !process.name().to_string().to_lowercase().contains("wrapper")
+                              && !process.name().to_string().to_lowercase().contains("launcher");
                             if name_match || exe_match || cmd_match {
                                 active_module = Some(module.clone());
                                 break;
