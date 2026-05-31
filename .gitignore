@@ -15,6 +15,13 @@ dist-ssr
 .examples
 scratch
 
+# Python
+.venv/
+__pycache__/
+*.pyc
+.python-version
+tests/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -18,6 +18,10 @@
   --accent-green: hsla(129, 77%, 43%, 0.75);
   --accent-green-strong: hsla(129, 77%, 43%, 0.92);
   --accent-green-ring: hsla(129, 77%, 43%, 0.35);
+  
+  --accent-forza: hsl(333, 77%, 53%);
+  --accent-forza-strong: hsl(333, 98%, 59%);
+  --accent-forza-ring: hsl(333, 67%, 40%);
 
   --radius-sm: 0.375rem;
   --radius-md: 0.625rem;
